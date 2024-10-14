@@ -1,5 +1,6 @@
 ﻿using MailKit.Net.Smtp;
 using MimeKit;
+using Softone;
 using System;
 using System.Threading.Tasks;
 
@@ -20,22 +21,60 @@ namespace StmMailDaemon.Models
         {
             try
             {
-                using var customer = GlobalVariables.xSupport.CreateModule("CUSTOMER");
-
-                customer.LocateData(Trdr);
-
-                var tempPath = $"{AppDomain.CurrentDomain.BaseDirectory}CusStm\\{Guid.NewGuid()}.pdf";
-
-                var result = customer.PrintForm(GlobalVariables.ObjectForm, "PDF file", tempPath);
-
-                if (result == "OK")
+                if (GlobalVariables.ReportType == ReportType.ObjectForm)
                 {
-                    StatementPath = tempPath;
+                    GetObjectForm();
                 }
+                else
+                {
+                    GetReport();
+                }
+
             }
             catch (Exception ex)
             {
                 LogWriter.WriteToLog($"{Code}: {ex.Message}", false);
+            }
+        }
+
+        private void GetObjectForm()
+        {
+            using var customer = GlobalVariables.xSupport.CreateModule("CUSTOMER");
+
+            customer.LocateData(Trdr);
+
+            var tempPath = $"{AppDomain.CurrentDomain.BaseDirectory}CusStm\\{Guid.NewGuid()}.pdf";
+
+            var result = customer.PrintForm(GlobalVariables.ObjectForm, "PDF file", tempPath);
+
+            if (result == "OK")
+            {
+                StatementPath = tempPath;
+            }
+        }
+
+        private void GetReport()
+        {
+            using var customer = GlobalVariables.xSupport.CreateModule("CUSTOMER");
+
+            var tempPath = $"{AppDomain.CurrentDomain.BaseDirectory}CusStm\\{Guid.NewGuid()}.pdf";
+
+            var obj = customer.Exec("CODE:SysRequest.executeReport", new object[]
+            {
+                "CUST_STM",
+
+                GlobalVariables.ReportList,
+
+                $"QUESTIONS.FCODE={Code}&QUESTIONS.TCODE={Code}",
+
+                tempPath,
+
+                GlobalVariables.ReportTemplate
+            });
+
+            if (obj.ToString() == tempPath)
+            {
+                StatementPath = tempPath;
             }
         }
 

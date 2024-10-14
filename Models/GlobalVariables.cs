@@ -18,7 +18,10 @@ namespace StmMailDaemon.Models
         public static string LogPath { get; private set; }
         public static string TempDir { get; private set; }
         public static string SqlFilter { get; private set; }
+        public static ReportType ReportType { get; private set; }
         public static int ObjectForm { get; private set; }
+        public static string ReportList { get; private set; }
+        public static string ReportTemplate { get; private set; }
         public static int MailBatchSize { get; private set; }
         public static int MailBatchDelay { get; private set; }
         public static string MailServer { get; private set; }
@@ -75,7 +78,19 @@ namespace StmMailDaemon.Models
 
             SqlFilter ??= string.Empty;
 
+            var reportType = int.TryParse(ConfigurationManager.AppSettings.Get("ObjectForm/Report"), out int type) ? type : 0;
+
+            ReportType = reportType == 0 ? ReportType.ObjectForm : ReportType.Report;
+
             ObjectForm = int.TryParse(ConfigurationManager.AppSettings.Get("ObjectForm"), out int objectForm) ? objectForm : 0;
+
+            ReportList = ConfigurationManager.AppSettings.Get("ReportList");
+
+            ReportList ??= string.Empty;
+
+            ReportTemplate = ConfigurationManager.AppSettings.Get("ReportTemplate");
+
+            ReportTemplate ??= string.Empty;
 
             MailBatchSize = int.TryParse(ConfigurationManager.AppSettings.Get("MailBatchSize"), out int mailBatchSize) ? mailBatchSize : 0;
 
@@ -117,5 +132,11 @@ namespace StmMailDaemon.Models
             MailHtmlBody ??= string.Empty;
         }
 
+    }
+
+    public enum ReportType
+    {
+        ObjectForm,
+        Report
     }
 }

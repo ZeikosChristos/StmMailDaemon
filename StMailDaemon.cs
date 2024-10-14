@@ -34,6 +34,8 @@ namespace StmMailDaemon
 
         private async Task SendCustomerStatements()
         {
+            using var smtpClient = new SmtpClient();
+
             try
             {
                 XSupport.InitInterop(0, GlobalVariables.XdllPath);
@@ -59,10 +61,15 @@ namespace StmMailDaemon
                     var customer = new Customer()
                     {
                         Trdr = Convert.ToInt32(row["TRDR"]),
+
                         Code = row["CODE"].ToString(),
+
                         Name = row["NAME"].ToString(),
+
                         Email = row["EMAIL"].ToString(),
+
                         EmailAcc = row["EMAILACC"].ToString(),
+
                         Balance = row["LBAL"] == DBNull.Value ? 0d : Convert.ToDouble(row["LBAL"])
                     };
 
@@ -71,29 +78,28 @@ namespace StmMailDaemon
                     customerList.Add(customer);
                 }
 
-                using var smtpClient = new SmtpClient();
-
-                await smtpClient.ConnectAsync(GlobalVariables.MailServer, GlobalVariables.MailPort, GlobalVariables.MailSSL);
-
-                await smtpClient.AuthenticateAsync(GlobalVariables.MailUsername, GlobalVariables.MailPassword);
-
                 var counter = 1;
 
                 foreach (var customer in customerList)
                 {
+                    if (!smtpClient.IsConnected || !smtpClient.IsAuthenticated)
+                    {
+                        await smtpClient.ConnectAsync(GlobalVariables.MailServer, GlobalVariables.MailPort, GlobalVariables.MailSSL);
+
+                        await smtpClient.AuthenticateAsync(GlobalVariables.MailUsername, GlobalVariables.MailPassword);
+                    }
+
+                    await customer.SendStatement(smtpClient);
+                    
+                    counter++;
+
                     if (counter > GlobalVariables.MailBatchSize)
                     {
                         await Task.Delay(GlobalVariables.MailBatchDelay);
 
                         counter = 1;
                     }
-
-                    await customer.SendStatement(smtpClient);
-                    
-                    counter++;
                 }
-
-                await smtpClient.DisconnectAsync(true);
             }
             catch (Exception ex)
             {
@@ -109,6 +115,11 @@ namespace StmMailDaemon
                 GlobalVariables.xSupport?.Close();
 
                 GlobalVariables.xSupport?.Dispose();
+
+                if (smtpClient.IsConnected)
+                {
+                    await smtpClient.DisconnectAsync(true);
+                }
 
                 Stop();
             }
