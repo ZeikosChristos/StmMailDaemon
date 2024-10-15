@@ -2,6 +2,7 @@
 using MimeKit;
 using Softone;
 using System;
+using System.Management;
 using System.Threading.Tasks;
 
 namespace StmMailDaemon.Models
@@ -78,7 +79,7 @@ namespace StmMailDaemon.Models
             }
         }
 
-        public async Task SendStatement(SmtpClient smtpClient)
+        public void SendStatement()
         {
             try
             {
@@ -87,33 +88,39 @@ namespace StmMailDaemon.Models
                     return;
                 }
 
-                var message = new MimeMessage();
+                using var customer = GlobalVariables.xSupport.CreateModule("CUSTOMER");
 
-                message.From.Add(new MailboxAddress(GlobalVariables.MailName, GlobalVariables.MailAddress));
+                var mailTo = string.IsNullOrEmpty(EmailAcc) ? Email : EmailAcc;
 
-                if (!string.IsNullOrEmpty(EmailAcc))
+                var result = customer.Exec("CODE:SysRequest.doSendMail3", new object[]
                 {
-                    message.To.Add(new MailboxAddress(EmailAcc, EmailAcc));
+                    mailTo,
+
+                    string.Empty,
+
+                    string.Empty,
+
+                    GlobalVariables.MailSubject,
+
+                    string.Empty,
+
+                    GlobalVariables.MailHtmlBody,
+
+                    StatementPath,
+
+                    GlobalVariables.MailName,
+
+                    GlobalVariables.MailAccount
+                });
+
+                if ((bool)result)
+                {
+                    LogWriter.WriteToLog($"Mail sent to {Name}", false);
                 }
                 else
                 {
-                    message.To.Add(new MailboxAddress(Email, Email));
+                    LogWriter.WriteToLog($"Αποτυχία αποστολής email σε {Name}", false);
                 }
-
-                message.Subject = GlobalVariables.MailSubject;
-
-                var builder = new BodyBuilder()
-                {
-                    HtmlBody = GlobalVariables.MailHtmlBody
-                };
-
-                builder.Attachments.Add(StatementPath);
-
-                message.Body = builder.ToMessageBody();
-
-                await smtpClient.SendAsync(message);
-
-                LogWriter.WriteToLog($"Mail sent to {Name}", false);
             }
             catch (Exception ex)
             {

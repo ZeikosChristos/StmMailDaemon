@@ -24,13 +24,8 @@ namespace StmMailDaemon.Models
         public static string ReportTemplate { get; private set; }
         public static int MailBatchSize { get; private set; }
         public static int MailBatchDelay { get; private set; }
-        public static string MailServer { get; private set; }
-        public static string MailUsername { get; private set; }
-        public static string MailPassword { get; private set; }
-        public static string MailAddress { get; private set; }
+        public static int MailAccount { get; private set; }
         public static string MailName { get; private set; }
-        public static int MailPort { get; private set; }
-        public static bool MailSSL { get; private set; }
         public static string MailSubject { get; private set; }
         public static string MailHtmlBody { get; private set; }
 
@@ -96,29 +91,11 @@ namespace StmMailDaemon.Models
 
             MailBatchDelay = int.TryParse(ConfigurationManager.AppSettings.Get("MailBatchDelay"), out int mailBatchDelay) ? mailBatchDelay : 0;
 
-            MailServer = ConfigurationManager.AppSettings.Get("MailServer");
-
-            MailServer ??= string.Empty;
-
-            MailUsername = ConfigurationManager.AppSettings.Get("MailUsername");
-
-            MailUsername ??= string.Empty;
-
-            MailPassword = ConfigurationManager.AppSettings.Get("MailPassword");
-
-            MailPassword ??= string.Empty;
-
-            MailAddress = ConfigurationManager.AppSettings.Get("MailAddress");
-
-            MailAddress ??= string.Empty;
+            MailAccount = int.TryParse(ConfigurationManager.AppSettings.Get("MailAccount"), out int mailAccount) ? mailAccount : 0;
 
             MailName = ConfigurationManager.AppSettings.Get("MailName");
 
             MailName ??= string.Empty;
-
-            MailPort = int.TryParse(ConfigurationManager.AppSettings.Get("MailPort"), out int mailPort) ? mailPort : 0;
-
-            MailSSL = bool.TryParse(ConfigurationManager.AppSettings.Get("MailSSL"), out bool mailSSL) ? mailSSL : false;
 
             MailSubject = ConfigurationManager.AppSettings.Get("MailSubject");
 

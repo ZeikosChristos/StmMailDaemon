@@ -34,8 +34,6 @@ namespace StmMailDaemon
 
         private async Task SendCustomerStatements()
         {
-            using var smtpClient = new SmtpClient();
-
             try
             {
                 XSupport.InitInterop(0, GlobalVariables.XdllPath);
@@ -82,14 +80,7 @@ namespace StmMailDaemon
 
                 foreach (var customer in customerList)
                 {
-                    if (!smtpClient.IsConnected || !smtpClient.IsAuthenticated)
-                    {
-                        await smtpClient.ConnectAsync(GlobalVariables.MailServer, GlobalVariables.MailPort, GlobalVariables.MailSSL);
-
-                        await smtpClient.AuthenticateAsync(GlobalVariables.MailUsername, GlobalVariables.MailPassword);
-                    }
-
-                    await customer.SendStatement(smtpClient);
+                    customer.SendStatement();
                     
                     counter++;
 
@@ -115,11 +106,6 @@ namespace StmMailDaemon
                 GlobalVariables.xSupport?.Close();
 
                 GlobalVariables.xSupport?.Dispose();
-
-                if (smtpClient.IsConnected)
-                {
-                    await smtpClient.DisconnectAsync(true);
-                }
 
                 Stop();
             }
