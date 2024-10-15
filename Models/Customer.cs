@@ -43,7 +43,7 @@ namespace StmMailDaemon.Models
 
             customer.LocateData(Trdr);
 
-            var tempPath = $"{AppDomain.CurrentDomain.BaseDirectory}CusStm\\{Guid.NewGuid()}.pdf";
+            var tempPath = $"{GlobalVariables.TempDir}\\{Guid.NewGuid()}.pdf";
 
             var result = customer.PrintForm(GlobalVariables.ObjectForm, "PDF file", tempPath);
 
@@ -57,7 +57,7 @@ namespace StmMailDaemon.Models
         {
             using var customer = GlobalVariables.xSupport.CreateModule("CUSTOMER");
 
-            var tempPath = $"{AppDomain.CurrentDomain.BaseDirectory}CusStm\\{Guid.NewGuid()}.pdf";
+            var tempPath = $"{GlobalVariables.TempDir}\\{Guid.NewGuid()}.pdf";
 
             var obj = customer.Exec("CODE:SysRequest.executeReport", new object[]
             {
