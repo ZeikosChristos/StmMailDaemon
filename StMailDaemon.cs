@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.ServiceProcess;
+using System.Threading;
 using System.Threading.Tasks;
 
 
@@ -70,9 +71,7 @@ namespace StmMailDaemon
 
                         Balance = row["LBAL"] == DBNull.Value ? 0d : Convert.ToDouble(row["LBAL"])
                     };
-
-                    customer.GetStatement();
-
+                    
                     customerList.Add(customer);
                 }
 
@@ -80,7 +79,9 @@ namespace StmMailDaemon
 
                 foreach (var customer in customerList)
                 {
-                    customer.SendStatement();
+                    customer.GetStatements();
+
+                    customer.SendStatements();
                     
                     counter++;
 
