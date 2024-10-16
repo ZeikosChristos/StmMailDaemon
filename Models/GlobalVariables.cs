@@ -67,12 +67,7 @@ namespace StmMailDaemon.Models
                 LogPath = $"{AppDomain.CurrentDomain.BaseDirectory}StmMailLog.txt";
             }
 
-            TempDir = ConfigurationManager.AppSettings.Get("TempDir");
-
-            if (string.IsNullOrEmpty(TempDir))
-            {
-                TempDir = $"{AppDomain.CurrentDomain.BaseDirectory}CusStm";
-            }
+            TempDir = $"{AppDomain.CurrentDomain.BaseDirectory}CusStm";
 
             SqlFilter = ConfigurationManager.AppSettings.Get("SqlFilter");
 
