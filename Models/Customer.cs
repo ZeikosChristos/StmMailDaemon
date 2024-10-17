@@ -1,12 +1,6 @@
-﻿using MailKit.Net.Smtp;
-using MimeKit;
-using Softone;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
-using System.Management;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace StmMailDaemon.Models
 {
@@ -39,12 +33,9 @@ namespace StmMailDaemon.Models
                             GetObjectForm(objectForm);
                         }
                     }
-                    else
+                    else if (objectForm.RunDay == DateTime.Now.Day)
                     {
-                        if (objectForm.RunDay == DateTime.Now.Day)
-                        {
-                            GetObjectForm(objectForm);
-                        }
+                        GetObjectForm(objectForm);
                     }
                 }
 
@@ -61,12 +52,9 @@ namespace StmMailDaemon.Models
                             GetReport(report);
                         }
                     }
-                    else
+                    else if (report.RunDay == DateTime.Now.Day)
                     {
-                        if (report.RunDay == DateTime.Now.Day)
-                        {
-                            GetReport(report);
-                        }
+                        GetReport(report);
                     }
                 }
             }

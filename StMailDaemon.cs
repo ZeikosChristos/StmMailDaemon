@@ -1,12 +1,10 @@
-﻿using MailKit.Net.Smtp;
-using Softone;
+﻿using Softone;
 using StmMailDaemon.Models;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.ServiceProcess;
-using System.Threading;
 using System.Threading.Tasks;
 
 
@@ -53,7 +51,7 @@ namespace StmMailDaemon
 
                 Directory.CreateDirectory(GlobalVariables.TempDir);
 
-                var customerList = new List<Customer>();
+                var customers = new List<Customer>();
 
                 foreach (DataRow row in cusDataset.Rows) 
                 {
@@ -72,12 +70,12 @@ namespace StmMailDaemon
                         Balance = row["LBAL"] == DBNull.Value ? 0d : Convert.ToDouble(row["LBAL"])
                     };
                     
-                    customerList.Add(customer);
+                    customers.Add(customer);
                 }
 
                 var counter = 1;
 
-                foreach (var customer in customerList)
+                foreach (var customer in customers)
                 {
                     customer.GetStatements();
 
