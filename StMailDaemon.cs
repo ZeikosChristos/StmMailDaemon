@@ -1,5 +1,4 @@
-﻿using MailKit.Net.Smtp;
-using Softone;
+﻿using Softone;
 using StmMailDaemon.Models;
 using System;
 using System.Collections.Generic;
@@ -34,8 +33,6 @@ namespace StmMailDaemon
 
         private async Task SendCustomerStatements()
         {
-            using var smtpClient = new SmtpClient();
-
             try
             {
                 XSupport.InitInterop(0, GlobalVariables.XdllPath);
@@ -54,7 +51,7 @@ namespace StmMailDaemon
 
                 Directory.CreateDirectory(GlobalVariables.TempDir);
 
-                var customerList = new List<Customer>();
+                var customers = new List<Customer>();
 
                 foreach (DataRow row in cusDataset.Rows) 
                 {
@@ -72,24 +69,17 @@ namespace StmMailDaemon
 
                         Balance = row["LBAL"] == DBNull.Value ? 0d : Convert.ToDouble(row["LBAL"])
                     };
-
-                    customer.GetStatement();
-
-                    customerList.Add(customer);
+                    
+                    customers.Add(customer);
                 }
 
                 var counter = 1;
 
-                foreach (var customer in customerList)
+                foreach (var customer in customers)
                 {
-                    if (!smtpClient.IsConnected || !smtpClient.IsAuthenticated)
-                    {
-                        await smtpClient.ConnectAsync(GlobalVariables.MailServer, GlobalVariables.MailPort, GlobalVariables.MailSSL);
+                    customer.GetStatements();
 
-                        await smtpClient.AuthenticateAsync(GlobalVariables.MailUsername, GlobalVariables.MailPassword);
-                    }
-
-                    await customer.SendStatement(smtpClient);
+                    customer.SendStatements();
                     
                     counter++;
 
@@ -115,11 +105,6 @@ namespace StmMailDaemon
                 GlobalVariables.xSupport?.Close();
 
                 GlobalVariables.xSupport?.Dispose();
-
-                if (smtpClient.IsConnected)
-                {
-                    await smtpClient.DisconnectAsync(true);
-                }
 
                 Stop();
             }

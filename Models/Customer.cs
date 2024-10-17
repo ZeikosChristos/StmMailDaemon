@@ -1,8 +1,6 @@
-﻿using MailKit.Net.Smtp;
-using MimeKit;
-using Softone;
-using System;
-using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace StmMailDaemon.Models
 {
@@ -14,22 +12,51 @@ namespace StmMailDaemon.Models
         public string Email { get; set; }
         public string EmailAcc { get; set; }
         public double Balance { get; set; }
-        public string StatementPath { get; set; }
+        public List<string> ObjectForms { get; set; } = new List<string>();
+        public List<string> Reports { get; set; } = new List<string>();
 
 
-        public void GetStatement()
+        public void GetStatements()
         {
             try
             {
-                if (GlobalVariables.ReportType == ReportType.ObjectForm)
+                foreach (var objectForm in GlobalVariables.ObjectForms)
                 {
-                    GetObjectForm();
-                }
-                else
-                {
-                    GetReport();
+                    if (objectForm.RunDay == 0)
+                    {
+                        GetObjectForm(objectForm);
+                    }
+                    else if (objectForm.RunDay >= 31)
+                    {
+                        if (DateTime.Now.Day == DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month))
+                        {
+                            GetObjectForm(objectForm);
+                        }
+                    }
+                    else if (objectForm.RunDay == DateTime.Now.Day)
+                    {
+                        GetObjectForm(objectForm);
+                    }
                 }
 
+                foreach (var report in GlobalVariables.Reports)
+                {
+                    if (report.RunDay == 0)
+                    {
+                        GetReport(report);
+                    }
+                    else if (report.RunDay >= 31)
+                    {
+                        if (DateTime.Now.Day == DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month))
+                        {
+                            GetReport(report);
+                        }
+                    }
+                    else if (report.RunDay == DateTime.Now.Day)
+                    {
+                        GetReport(report);
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -37,83 +64,103 @@ namespace StmMailDaemon.Models
             }
         }
 
-        private void GetObjectForm()
+        private void GetObjectForm(ObjectForm objectForm)
         {
+            var tempPath = $"{GlobalVariables.TempDir}\\{objectForm.FileName}";
+
             using var customer = GlobalVariables.xSupport.CreateModule("CUSTOMER");
 
             customer.LocateData(Trdr);
 
-            var tempPath = $"{GlobalVariables.TempDir}\\{Guid.NewGuid()}.pdf";
-
-            var result = customer.PrintForm(GlobalVariables.ObjectForm, "PDF file", tempPath);
+            var result = customer.PrintForm(objectForm.FormCode, "PDF file", tempPath);
 
             if (result == "OK")
             {
-                StatementPath = tempPath;
+                ObjectForms.Add(tempPath);
             }
         }
 
-        private void GetReport()
+        private void GetReport(Report report)
         {
-            using var customer = GlobalVariables.xSupport.CreateModule("CUSTOMER");
+            var tempPath = $"{GlobalVariables.TempDir}\\{report.FileName}";
 
-            var tempPath = $"{GlobalVariables.TempDir}\\{Guid.NewGuid()}.pdf";
+            var stockObj = GlobalVariables.xSupport.GetStockObj("SysRequest", true);
 
-            var obj = customer.Exec("CODE:SysRequest.executeReport", new object[]
+            var result = GlobalVariables.xSupport.CallPublished(stockObj, "executeReport", new object[]
             {
-                "CUST_STM",
+                report.ReportObj,
 
-                GlobalVariables.ReportList,
+                report.ReportList,
 
                 $"QUESTIONS.FCODE={Code}&QUESTIONS.TCODE={Code}",
 
                 tempPath,
 
-                GlobalVariables.ReportTemplate
+                report.Template
             });
 
-            if (obj.ToString() == tempPath)
+            if (result.ToString() == tempPath)
             {
-                StatementPath = tempPath;
+                Reports.Add(tempPath);
             }
         }
 
-        public async Task SendStatement(SmtpClient smtpClient)
+        public void SendStatements()
         {
             try
             {
-                if (string.IsNullOrEmpty(StatementPath))
+                if (ObjectForms.Count == 0 && Reports.Count == 0)
                 {
+                    LogWriter.WriteToLog($"Δεν βρέθηκαν αρχεία για τον πελάτη {Name}", false);
+
                     return;
                 }
 
-                var message = new MimeMessage();
+                var stringBuilder = new StringBuilder();
 
-                message.From.Add(new MailboxAddress(GlobalVariables.MailName, GlobalVariables.MailAddress));
-
-                if (!string.IsNullOrEmpty(EmailAcc))
+                foreach (var objectForm in ObjectForms)
                 {
-                    message.To.Add(new MailboxAddress(EmailAcc, EmailAcc));
+                    stringBuilder.Append($"{objectForm};");
+                }
+
+                foreach (var report in Reports)
+                {
+                    stringBuilder.Append($"{report};");
+                }
+
+                var mailTo = string.IsNullOrEmpty(EmailAcc) ? Email : EmailAcc;
+
+                var stockObj = GlobalVariables.xSupport.GetStockObj("SysRequest", true);
+
+                var result = GlobalVariables.xSupport.CallPublished(stockObj, "doSendMail3", new object[]
+                {
+                    mailTo,
+
+                    string.Empty,
+
+                    string.Empty,
+
+                    GlobalVariables.MailSubject,
+
+                    string.Empty,
+
+                    GlobalVariables.MailHtmlBody,
+
+                    stringBuilder.ToString(0, stringBuilder.Length - 1),
+
+                    GlobalVariables.MailName,
+
+                    GlobalVariables.MailAccount
+                });
+
+                if ((bool)result)
+                {
+                    LogWriter.WriteToLog($"Στάλθηκε email σε {Name}", false);
                 }
                 else
                 {
-                    message.To.Add(new MailboxAddress(Email, Email));
+                    LogWriter.WriteToLog($"Αποτυχία αποστολής email σε {Name}", false);
                 }
-
-                message.Subject = GlobalVariables.MailSubject;
-
-                var builder = new BodyBuilder()
-                {
-                    HtmlBody = GlobalVariables.MailHtmlBody
-                };
-
-                builder.Attachments.Add(StatementPath);
-
-                message.Body = builder.ToMessageBody();
-
-                await smtpClient.SendAsync(message);
-
-                LogWriter.WriteToLog($"Mail sent to {Name}", false);
             }
             catch (Exception ex)
             {

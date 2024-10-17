@@ -1,5 +1,6 @@
 ﻿using Softone;
 using System;
+using System.Collections.Generic;
 using System.Configuration;
 
 
@@ -18,19 +19,12 @@ namespace StmMailDaemon.Models
         public static string LogPath { get; private set; }
         public static string TempDir { get; private set; }
         public static string SqlFilter { get; private set; }
-        public static ReportType ReportType { get; private set; }
-        public static int ObjectForm { get; private set; }
-        public static string ReportList { get; private set; }
-        public static string ReportTemplate { get; private set; }
+        public static List<ObjectForm> ObjectForms { get; private set; }
+        public static List<Report> Reports { get; private set; }
         public static int MailBatchSize { get; private set; }
         public static int MailBatchDelay { get; private set; }
-        public static string MailServer { get; private set; }
-        public static string MailUsername { get; private set; }
-        public static string MailPassword { get; private set; }
-        public static string MailAddress { get; private set; }
+        public static int MailAccount { get; private set; }
         public static string MailName { get; private set; }
-        public static int MailPort { get; private set; }
-        public static bool MailSSL { get; private set; }
         public static string MailSubject { get; private set; }
         public static string MailHtmlBody { get; private set; }
 
@@ -73,47 +67,19 @@ namespace StmMailDaemon.Models
 
             SqlFilter ??= string.Empty;
 
-            var reportType = int.TryParse(ConfigurationManager.AppSettings.Get("ObjectForm/Report"), out int type) ? type : 0;
+            ObjectForms = ObjectForm.GetObjectForms(ConfigurationManager.AppSettings.Get("ObjectForms"));
 
-            ReportType = reportType == 0 ? ReportType.ObjectForm : ReportType.Report;
-
-            ObjectForm = int.TryParse(ConfigurationManager.AppSettings.Get("ObjectForm"), out int objectForm) ? objectForm : 0;
-
-            ReportList = ConfigurationManager.AppSettings.Get("ReportList");
-
-            ReportList ??= string.Empty;
-
-            ReportTemplate = ConfigurationManager.AppSettings.Get("ReportTemplate");
-
-            ReportTemplate ??= string.Empty;
+            Reports = Report.GetReports(ConfigurationManager.AppSettings.Get("Reports"));
 
             MailBatchSize = int.TryParse(ConfigurationManager.AppSettings.Get("MailBatchSize"), out int mailBatchSize) ? mailBatchSize : 0;
 
             MailBatchDelay = int.TryParse(ConfigurationManager.AppSettings.Get("MailBatchDelay"), out int mailBatchDelay) ? mailBatchDelay : 0;
 
-            MailServer = ConfigurationManager.AppSettings.Get("MailServer");
-
-            MailServer ??= string.Empty;
-
-            MailUsername = ConfigurationManager.AppSettings.Get("MailUsername");
-
-            MailUsername ??= string.Empty;
-
-            MailPassword = ConfigurationManager.AppSettings.Get("MailPassword");
-
-            MailPassword ??= string.Empty;
-
-            MailAddress = ConfigurationManager.AppSettings.Get("MailAddress");
-
-            MailAddress ??= string.Empty;
+            MailAccount = int.TryParse(ConfigurationManager.AppSettings.Get("MailAccount"), out int mailAccount) ? mailAccount : 0;
 
             MailName = ConfigurationManager.AppSettings.Get("MailName");
 
             MailName ??= string.Empty;
-
-            MailPort = int.TryParse(ConfigurationManager.AppSettings.Get("MailPort"), out int mailPort) ? mailPort : 0;
-
-            MailSSL = bool.TryParse(ConfigurationManager.AppSettings.Get("MailSSL"), out bool mailSSL) ? mailSSL : false;
 
             MailSubject = ConfigurationManager.AppSettings.Get("MailSubject");
 
@@ -129,9 +95,94 @@ namespace StmMailDaemon.Models
 
     }
 
-    public enum ReportType
+    public class ObjectForm
     {
-        ObjectForm,
-        Report
+        public int RunDay { get; set; }
+        public int FormCode { get; set; }
+        public string FileName { get; set; }
+
+
+        public static List<ObjectForm> GetObjectForms(string configString)
+        {
+            var objectForms = new List<ObjectForm>();
+
+            if (string.IsNullOrEmpty(configString))
+            {
+                return objectForms;
+            }
+
+            var formsArray = configString.Split('|');
+
+            foreach (var formArray in formsArray)
+            {
+                if (formArray.Length < 3)
+                {
+                    continue;
+                }
+
+                var formProperties = formArray.Split(';');
+
+                var objectForm = new ObjectForm()
+                {
+                    RunDay = int.TryParse(formProperties[0], out int id) ? id : 0,
+
+                    FormCode = int.TryParse(formProperties[1], out int day) ? day : 0,
+
+                    FileName = formProperties[2] == string.Empty ? $"{Guid.NewGuid()}.pdf" : $"{formProperties[2]}.pdf"
+                };
+
+                objectForms.Add(objectForm);
+            }
+
+            return objectForms;
+        }
+    }
+
+    public class Report
+    {
+        public int RunDay { get; set; }
+        public string ReportObj { get; set; }
+        public string ReportList { get; set; }
+        public string Template { get; set; }
+        public string FileName { get; set; }
+
+        public static List<Report> GetReports(string configString)
+        {
+            var reports = new List<Report>();
+
+            if (string.IsNullOrEmpty(configString))
+            {
+                return reports;
+            }
+
+            var reportsArray = configString.Split('|');
+
+            foreach (var reportArray in reportsArray)
+            {
+                if (reportArray.Length < 5)
+                {
+                    continue;
+                }
+
+                var reportProperties = reportArray.Split(';');
+
+                var report = new Report()
+                {
+                    RunDay = int.TryParse(reportProperties[0], out int day) ? day : 0,
+
+                    ReportObj = reportProperties[1] == string.Empty ? "CUST_STM" : reportProperties[1],
+
+                    ReportList = reportProperties[2] == string.Empty ? "Πρότυπο" : reportProperties[2],
+
+                    Template = reportProperties[3],
+
+                    FileName = reportProperties[4] == string.Empty ? $"{Guid.NewGuid()}.pdf" : $"{reportProperties[4]}.pdf"
+                };
+
+                reports.Add(report);
+            }
+
+            return reports;
+        }
     }
 }
