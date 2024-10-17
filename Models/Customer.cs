@@ -68,7 +68,7 @@ namespace StmMailDaemon.Models
         {
             var tempPath = $"{GlobalVariables.TempDir}\\{objectForm.FileName}";
 
-            using var customer = GlobalVariables.xSupport.CreateModule("CUSTOMER");
+            using var customer = GlobalVariables.S1Support.CreateModule("CUSTOMER");
 
             customer.LocateData(Trdr);
 
@@ -84,9 +84,9 @@ namespace StmMailDaemon.Models
         {
             var tempPath = $"{GlobalVariables.TempDir}\\{report.FileName}";
 
-            var stockObj = GlobalVariables.xSupport.GetStockObj("SysRequest", true);
+            var stockObj = GlobalVariables.S1Support.GetStockObj("SysRequest", true);
 
-            var result = GlobalVariables.xSupport.CallPublished(stockObj, "executeReport", new object[]
+            var result = GlobalVariables.S1Support.CallPublished(stockObj, "executeReport", new object[]
             {
                 report.ReportObj,
 
@@ -130,9 +130,9 @@ namespace StmMailDaemon.Models
 
                 var mailTo = string.IsNullOrEmpty(EmailAcc) ? Email : EmailAcc;
 
-                var stockObj = GlobalVariables.xSupport.GetStockObj("SysRequest", true);
+                var stockObj = GlobalVariables.S1Support.GetStockObj("SysRequest", true);
 
-                var result = GlobalVariables.xSupport.CallPublished(stockObj, "doSendMail3", new object[]
+                var result = GlobalVariables.S1Support.CallPublished(stockObj, "doSendMail3", new object[]
                 {
                     mailTo,
 

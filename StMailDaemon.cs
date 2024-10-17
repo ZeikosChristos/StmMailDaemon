@@ -37,9 +37,9 @@ namespace StmMailDaemon
             {
                 XSupport.InitInterop(0, GlobalVariables.XdllPath);
 
-                GlobalVariables.xSupport = XSupport.Login(GlobalVariables.XcoPath, GlobalVariables.S1Username, GlobalVariables.S1Password, GlobalVariables.Company, GlobalVariables.Branch, DateTime.Now);
+                GlobalVariables.S1Support = XSupport.Login(GlobalVariables.XcoPath, GlobalVariables.S1Username, GlobalVariables.S1Password, GlobalVariables.Company, GlobalVariables.Branch, DateTime.Now);
 
-                var cusDataset = GlobalVariables.xSupport.GetSQLDataSet("select TRDR.TRDR, TRDR.CODE, TRDR.NAME, TRDR.EMAIL, TRDR.EMAILACC, TRDFINDATA.LBAL " +
+                var cusDataset = GlobalVariables.S1Support.GetSQLDataSet("select TRDR.TRDR, TRDR.CODE, TRDR.NAME, TRDR.EMAIL, TRDR.EMAILACC, TRDFINDATA.LBAL " +
                                                                         "from TRDR inner join TRDEXTRA on TRDR.TRDR = TRDEXTRA.TRDR inner join TRDFINDATA  on TRDR.COMPANY = TRDFINDATA.COMPANY and TRDR.TRDR = TRDFINDATA.TRDR " +
                                                                         $"where TRDR.COMPANY = :1 and TRDR.SODTYPE = 13 and (TRDR.EMAIL is not null or TRDR.EMAILACC is not null) {GlobalVariables.SqlFilter}",
                                                                         GlobalVariables.Company).CreateDataTable(true);
@@ -102,9 +102,9 @@ namespace StmMailDaemon
                     File.Delete(file);
                 }
 
-                GlobalVariables.xSupport?.Close();
+                GlobalVariables.S1Support?.Close();
 
-                GlobalVariables.xSupport?.Dispose();
+                GlobalVariables.S1Support?.Dispose();
 
                 Stop();
             }

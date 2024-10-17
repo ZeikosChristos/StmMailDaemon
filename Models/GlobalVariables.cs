@@ -9,7 +9,7 @@ namespace StmMailDaemon.Models
     public static class GlobalVariables
     {
         
-        public static XSupport xSupport { get; set; }
+        public static XSupport S1Support { get; set; }
         public static string XdllPath { get; private set; }
         public static string XcoPath { get; private set; }
         public static int Company { get; private set; }
